@@ -1,4 +1,3 @@
-```js
 export default async function handler(req, res) {
     const serverSlug = req.query.server;
 
@@ -70,4 +69,3 @@ export default async function handler(req, res) {
         });
     }
 }
-```
