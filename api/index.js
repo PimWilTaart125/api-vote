@@ -1,59 +1,47 @@
 export default async function handler(req, res) {
-    const serverSlug = req.query.server;
+    res.setHeader("Access-Control-Allow-Origin", "*");
 
-    if (!serverSlug) {
+    const slug = req.query.server;
+
+    if (!slug) {
         return res.status(400).json({
             error: "Missing server parameter"
         });
     }
 
     try {
-        // Get page 1 first so we know how many pages exist
-        const firstResponse = await fetch(
+        const first = await fetch(
             "https://mineservers.nl/api.php?page=1"
         );
 
-        if (!firstResponse.ok) {
-            throw new Error(
-                `MineSERVERS returned ${firstResponse.status}`
-            );
-        }
-
-        const firstData = await firstResponse.json();
-
+        const firstData = await first.json();
         const totalPages = firstData.total_pages || 1;
 
-        // Search page 1
         let server = firstData.servers?.find(
-            s => s.slug === serverSlug
+            s => s.slug === slug
         );
 
-        // Search the remaining pages
         for (let page = 2; page <= totalPages && !server; page++) {
             const response = await fetch(
                 `https://mineservers.nl/api.php?page=${page}`
             );
 
-            if (!response.ok) {
-                continue;
-            }
+            if (!response.ok) continue;
 
             const data = await response.json();
 
             server = data.servers?.find(
-                s => s.slug === serverSlug
+                s => s.slug === slug
             );
         }
 
-        // Server doesn't exist
         if (!server) {
             return res.status(404).json({
                 error: "Server not found",
-                server: serverSlug
+                server: slug
             });
         }
 
-        // Return the server information
         return res.status(200).json({
             name: server.name,
             slug: server.slug,
@@ -65,7 +53,7 @@ export default async function handler(req, res) {
         console.error(error);
 
         return res.status(500).json({
-            error: "Failed to fetch MineSERVERS API"
+            error: "MineSERVERS request failed"
         });
     }
 }
